@@ -21,14 +21,19 @@ int main(void) {
 	printf("Testing qopen()...\n");
 	queue_t* q1 = qopen();
 	if(q1 == NULL) {
-		printf("Test failed. qopen returned a NULL queue\n");
+		printf("Test failed. qopen returned a NULL queue.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	printf("Testing qput...\n");
 	person_t *p1 = make_person("Tyler", 22, 6.13);
 	int32_t put_p1 = qput(q1, p1);
-	if(put_p1 != 
+	if(put_p1 != 0){
+		printf("Test failed. error putting to queue.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	
 	
  
 	
