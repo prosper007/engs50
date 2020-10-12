@@ -26,7 +26,7 @@ typedef struct person {
 person_t* make_person(char* namep, int age, double height) {
 	person_t* pp;
 	if(!(pp=(person_t*)malloc(sizeof(person_t)))) {
-		printf("Error: malloc failed allocating car");
+		printf("Error: malloc failed allocating car\n");
 		return NULL;
 	}
 	strcpy(pp->name,namep);

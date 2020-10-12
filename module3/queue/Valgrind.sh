@@ -15,6 +15,9 @@ for f in test_*; do
 				echo "no leaks or errors present in file ${f}"
     fi
     rm tmp.txt
+		echo
+		echo "================"
+		echo
 done
 make clean
 

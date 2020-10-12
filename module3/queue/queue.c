@@ -1,3 +1,13 @@
+/* queue.c --- 
+ * 
+ * 
+ * Author: Chikezie Onungwa
+ * Created: Mon Oct 12 16:13:48 2020 (-0400)
+ * Version: 
+ * 
+ * Description: 
+ * 
+ */
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -172,24 +182,33 @@ void* qsearch(queue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), co
 void* qremove(queue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), const void* skeyp) {
 	queue_i* qi = find_q(qp);
 	if(qi == NULL){
-		return NULL; // return non-zero if queue doesn't exist
+		return NULL; // return null if queue doesn't exist
 	}
 
 	qnode_t* prev = NULL;
 	for(qnode_t* node = qi->front; node!=NULL; node=node->next) {
 		if(searchfn(node->elementp, skeyp)){
 			// remove node
-			if(node==qi->front){ // node to be removed is front
-				qi->front=node->next;
-			}
-			if(node==qi->back) {
-				qi->back = prev;
-				if(qi->back != NULL) {
-					qi->back->next = NULL;
+			if(node==qi->front || node==qi->back){
+				if(node==qi->front){ // node to be removed is front
+					qi->front=qi->front->next;
 				}
+				if(node==qi->back) {
+					qi->back = prev;
+					if(qi->back != NULL) {
+						qi->back->next = NULL;
+					}
+				}
+
+				void* removed_element = node->elementp;
+				free(node);
+				return removed_element;
+			} else{
+				prev->next = node->next;
+				void* removed_element = node->elementp;
+				free(node);
+				return removed_element;
 			}
-			prev->next = node->next;
-			
 		}
 		prev = node;
 	}
@@ -216,3 +235,5 @@ void qconcat(queue_t *q1p, queue_t *q2p) {
 	}
 	qclose(q2p);
 }
+
+
