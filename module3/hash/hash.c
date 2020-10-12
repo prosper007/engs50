@@ -3,6 +3,12 @@
  *
  */
 #include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "hash.h"
+#include "../queue/queue.h"
 
 /* 
  * SuperFastHash() -- produces a number between 0 and the tablesize-1.
@@ -54,4 +60,40 @@ static uint32_t SuperFastHash (const char *data,int len,uint32_t tablesize) {
   hash += hash >> 6;
   return hash % tablesize;
 }
+
+typedef struct hashtable {
+	uint32_t hsize;
+	queue_t **list_of_queues;
+	struct hashtable *next_ht;
+} hashtable_i;
+
+static hashtable_i *hashtable_interface=NULL;
+
+//define function to find a specific hashtable in an interface of hashtables
+hashtable_i* find_ht(hashtable_t *htp) {
+  hashtable_i *htfind;
+  for (htfind=hashtable_interface; htfind!= NULL; htfind=hashtable_interface->next_ht) {
+    if(htfind==htp) {
+      return htfind;
+    }   
+  }
+	printf("Hashtable not found in interface\n");
+  return NULL; 
+}
+
+hashtable_t *hopen(uint32_t hsize) {
+	hashtable_i* ht = (hashtable_i*)malloc(sizeof(hashtable_i));
+	ht->hsize = hsize;
+	ht->list_of_queues = (queue_t*)malloc(sizeof(queue_t*) * hsize);
+	
+	// add new hastable to list of hashtables in interface
+	ht->next_ht = hashtable_interface;
+	hashtable_interface = ht;
+	return (hashtable_t*) ht;
+}
+/*
+int32_t hput(hashtable_t *htp, void *ep, const char *key, int keylen) {
+	hashtable->
+}
+*/
 
