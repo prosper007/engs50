@@ -6,60 +6,83 @@
 #include "queue.h"
 
 /* a struct to represent a single node of a queue */
-typedef static struct qnode_t {
+typedef struct qnode {
   void* elementp;
-  struct qnode_t *next;
-}
+  struct qnode *next;
+} qnode_t;
+
 
 /* the queue representation is hidden from users of the module */
-typedef struct queue_t {
+typedef struct queue{
   qnode_t *front;
   qnode_t *back;
-  queue_t *queue_next;
-}
+  struct queue *next_queue;
+} queue_i;
 
-static queue_t* queue_interface=NULL;
+static queue_i *queue_interface=NULL;
 
 //define function to find a specific queue in an interface of queues
-queue_t* find_q(queue_t *qp) {
-  queue_t *qfind;
-  for (qfind=queue_interface; qfind!= NULL; qfind=queue_interface->next_queue_t) {
+queue_i* find_q(queue_t *qp) {
+  queue_i *qfind;
+  for (qfind=queue_interface; qfind!= NULL; qfind=queue_interface->next_queue) {
     if(qfind==qp) {
-      return *qfind;
-    }
-    else {
-      printf("Queue not found in interface\n");
-      return NULL;
-    }
+      return qfind;
+    }   
   }
+	printf("Queue not found in interface\n");
+  return NULL; 
 }
 
 /* A function that creates a new queue node and allocates memory for it */
-static qnode_t* new_qnode(elementp element) {
+static qnode_t* new_qnode(void* elementp) {
   qnode_t *new_node;
   new_node = (qnode_t*)malloc(sizeof(qnode_t));
-  new_node->elementp = element;
+  new_node->elementp = elementp;
   new_node->next = NULL;
   return new_node;
 }
 
 /* create an empty queue */
 queue_t* qopen(void) {
-  queue_t* queue = (queue_t*)malloc(sizeof(queue_t)); // assign memory for queue
+  queue_i* queue = (queue_i*)malloc(sizeof(queue_i)); // assign memory for queue
   queue->front = queue->back = NULL; // set front and back to NULL
-  return queue;
+
+	//add new queue to list of queues in interface
+	queue->next_queue = queue_interface;
+	queue_interface = queue;
+  return (queue_t*) queue;
 }
 
 /* deallocate a queue, frees everything in it */
 void qclose(queue_t *qp) {
-  while (qp->front != NULL) { // checks if qp is empty 
-    qnode_t* temp = qp->front; // store initial value of front
-    qp->front = qp->front->next; // move front to next node
+	queue_i* qi = find_q(qp);
+	if(qi == NULL){
+		return;
+	}
+  while (qi->front != NULL) { // checks if qp is empty 
+    qnode_t* temp = qi->front; // store initial value of front
+    qi->front = qi->front->next; // move front to next node
     free(temp); // free the node
   }
-  qp->front = qp->back = NULL; // just for safety reset front and back to NULL 
-  free(qp); //free the queue
-  qp=NULL;
+  qi->front = qi->back = NULL; // just for safety reset front and back to NULL
+
+	// remove queue from queue_interface
+	queue_i* prev = NULL;
+	for(queue_i* i = queue_interface; i!=NULL; i=i->next_queue) {
+		if(i == qi) {
+			if(prev == NULL){
+				queue_interface = i->next_queue;
+				break;
+			}
+			prev->next_queue = i->next_queue;
+			break;
+		}
+		prev = i;
+	}
+  free(qi); //free the queue
+  qi=NULL;
+	qp=NULL;
+	
 }
 
 /* Function to put an element at the back of the queue */
@@ -67,40 +90,52 @@ int32_t qput(queue_t *qp, void *elementp) {
   if (elementp == NULL) {
     return 1; // if element youre trying to add is NULL exit non-zero
   }
-  qnode_t node = new_qnode(elementp);
-  if (qp->front == NULL) {        // if queue is empty set both front and back to new node
-    qp->front = qp->back = node;
+  qnode_t* node = new_qnode(elementp);
+
+	queue_i* qi = find_q(qp);
+	if(qi == NULL){
+		return 1; // return non-zero if queue doesn't exist
+	}
+	
+  if (qi->front == NULL) {        // if queue is empty set both front and back to new node
+    qi->front = qi->back = node;
   } else {
-    qp->back->next = node;   // adding new element to a non-empty queue
-    qp->back = node;
+    qi->back->next = node;   // adding new element to a non-empty queue
+    qi->back = node;
   }
   return 0;
 }
 
 
 void* qget(queue_t *qp) {
-  if (qp->front == NULL) {
+	queue_i* qi = find_q(qp);
+	if(qi == NULL){
+		return NULL;
+	}
+	
+  if (qi->front == NULL) {
     return NULL;
   }
-  qnode_t* temp = qp->front;
-  qp->front = qp->front->next;
-  if (qp->front == NULL) {
-    qp->back == NULL;
+  qnode_t* temp = qi->front;
+  qi->front = qi->front->next;
+  if (qi->front == NULL) {
+    qi->back = NULL;
   }
+	void* elementp = temp->elementp;
   free(temp);
+	return elementp;
 }
 
 /* apply a function to every element of the queue */
 void qapply(queue_t *qp, void (*fn)(void *elementp)) {
 	//how to specify the queue in the loop?
-	queue_t *q = find_q(qp);
-	void *element;
+	queue_i *q = find_q(qp);
 	if (q==NULL) {
-		return NULL;
+		return; // queue not found
 	}
-	else {
-		for(element=q->front->elementp; element!=NULL; element=q->next_queue_t->elementp) {
-			fn(element);
+	//	qnode_t* node = q->front;
+	for(qnode_t* node = q->front; node!=NULL; node=node->next) {
+		fn(node->elementp);
 	}
 }
 
@@ -115,22 +150,19 @@ void qapply(queue_t *qp, void (*fn)(void *elementp)) {
  * returns a pointer to an element, or NULL if not found
  */
 void* qsearch(queue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), const void* skeyp) {
+	queue_i *q = find_q(qp);
+	if(q == NULL){
+		return NULL;
+	}
 	
-	//again, how to specify queue in the loop?
-	queue_t *q = find_q(qp);
-	void *element;
-	
-	for(element=q->front->elementp; element!=NULL; element=q->next_queue_t->elementp) {
-		const void* key;
-		const void* skey;
-		key = skey;
-		if (searchfn(element, key)!=TRUE) {
-			return NULL;
-		}
-		else {
-			return *element;
+	for(qnode_t* node = q->front; node!=NULL; node=node->next) {
+		/*const void* keyp;
+			keyp = skeyp;*/
+		if (searchfn(node->elementp, skeyp)) {
+			return node->elementp;
 		}
 	}
+	return NULL;
 }
 
 /* search a queue using a supplied boolean function (as in qsearch),
@@ -138,42 +170,49 @@ void* qsearch(queue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), co
  * NULL if not found
  */
 void* qremove(queue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), const void* skeyp) {
-	
-	//again, how to specify queue in the loop?
-	queue_t *q;
-	void *element;
-	void *elementf = NULL;
-	
-	for(element=q->front->elementp; element!=NULL; element=q->next_queue_t->elementp) {
-		const void* key;
-		const void* skey;
-		key = skey;
-		if (searchfn(element, key)!=TRUE) {
-			return NULL;
-		}
-		else {
-			if(elementf==NULL) {
-				//convert to appropriate data type instead of void*?
-				return (void*)qget(q);
-			}
-			elementf->q->front->elementp=element->q->next_queue_t->elementp;
-			return *element;
-		}
-		elementf=element;
+	queue_i* qi = find_q(qp);
+	if(qi == NULL){
+		return NULL; // return non-zero if queue doesn't exist
 	}
+
+	qnode_t* prev = NULL;
+	for(qnode_t* node = qi->front; node!=NULL; node=node->next) {
+		if(searchfn(node->elementp, skeyp)){
+			// remove node
+			if(node==qi->front){ // node to be removed is front
+				qi->front=node->next;
+			}
+			if(node==qi->back) {
+				qi->back = prev;
+				if(qi->back != NULL) {
+					qi->back->next = NULL;
+				}
+			}
+			prev->next = node->next;
+			
+		}
+		prev = node;
+	}
+	return NULL;
 }
 
 /* concatenates elements of q2 into q1
  * q2 is dealocated, closed, and unusable upon completion 
  */
 void qconcat(queue_t *q1p, queue_t *q2p) {
-	queue_t *q1;
-	queue_t *q2;
-	//how to specify that element2 is in q2?
-	void *element2;
-	for(element2=q2->front->elementp; element2!=NULL; element2=q2->next_queue_t->elementp) {
-		//convert to appropriate data type instead of void*?
-		qput(q1, element2);
+	queue_i *qi_1 = find_q(q1p);
+	if(qi_1 == NULL) {
+		return;
 	}
-	qclose(q2);
+	queue_i *qi_2 = find_q(q2p);
+	if(qi_2 == NULL) {
+		return;
+	}
+
+	qnode_t *node;
+	for(node=qi_2->front; node!=NULL; node=node->next){
+		//convert to appropriate data type instead of void*?
+		qput(q1p, node->elementp);
+	}
+	qclose(q2p);
 }
