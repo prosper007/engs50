@@ -67,10 +67,10 @@ typedef struct hashtable {
 	struct hashtable *next_ht;
 } hashtable_i;
 
-static hashtable_i *hashtable_interface=NULL;
+//static hashtable_i *hashtable_interface=NULL;
 
 //define function to find a specific hashtable in an interface of hashtables
-hashtable_i* find_ht(hashtable_t *htp) {
+/*hashtable_i* find_ht(hashtable_t *htp) {
   hashtable_i *htfind;
   for (htfind=hashtable_interface; htfind!= NULL; htfind=hashtable_interface->next_ht) {
     if(htfind==htp) {
@@ -79,7 +79,7 @@ hashtable_i* find_ht(hashtable_t *htp) {
   }
 	printf("Hashtable not found in interface\n");
   return NULL; 
-}
+}*/
 
 hashtable_t *hopen(uint32_t hsize) {
 	hashtable_i* ht = (hashtable_i*)malloc(sizeof(hashtable_i));
@@ -89,14 +89,15 @@ hashtable_t *hopen(uint32_t hsize) {
 	for(uint32_t i = 0; i < hsize; i++) {
 		ht->list_of_queues[i] = qopen();
 	}
-	// add new hastable to list of hashtables in interface
-	ht->next_ht = hashtable_interface;
-	hashtable_interface = ht;
+	// add new hashtable to list of hashtables in interface
+	//ht->next_ht = hashtable_interface;
+	//hashtable_interface = ht;
 	return (hashtable_t*) ht;
 }
 
 void hclose(hashtable_t *htp) {
-	hashtable_i* ht = find_ht(htp);
+	//hashtable_i* ht = find_ht(htp);
+	hashtable_i* ht = (hashtable_i *) htp;
 	if(ht == NULL) {
 		return;
 	}
@@ -108,7 +109,7 @@ void hclose(hashtable_t *htp) {
 	free(ht->list_of_queues);
 	
 	// remove hashtable from hashtable_interface
-	hashtable_i* prev = NULL;
+	/*hashtable_i* prev = NULL;
 	for(hashtable_i* i = hashtable_interface; i!=NULL; i=i->next_ht) {
 		if(i == ht) {
 			if(prev == NULL){
@@ -119,7 +120,7 @@ void hclose(hashtable_t *htp) {
 			break;
 		}
 		prev = i;
-	}
+	}*/
 	free(ht);
 	ht=NULL;
 	htp=NULL;
@@ -127,7 +128,8 @@ void hclose(hashtable_t *htp) {
 
 
 int32_t hput(hashtable_t *htp, void *ep, const char *key, int keylen) {
-	hashtable_i* ht = find_ht(htp);
+	//hashtable_i* ht = find_ht(htp);
+	hashtable_i* ht = (hashtable_i *) htp;
 	if(ht == NULL) {
 		return 1;
 	}
@@ -136,7 +138,8 @@ int32_t hput(hashtable_t *htp, void *ep, const char *key, int keylen) {
 }
 
 void *hsearch(hashtable_t *htp, bool (*searchfn)(void* elementp, const void* searchkeyp), const char *key, int32_t keylen) {
-	hashtable_i* ht = find_ht(htp);
+	//hashtable_i* ht = find_ht(htp);
+	hashtable_i* ht = (hashtable_i *) htp;
 	if(ht == NULL) {
 		return NULL;
 	}
@@ -145,7 +148,8 @@ void *hsearch(hashtable_t *htp, bool (*searchfn)(void* elementp, const void* sea
 }
 
 void *hremove(hashtable_t *htp, bool (*searchfn)(void* elementp, const void* searchkeyp), const char *key, int32_t keylen) {
-	hashtable_i* ht = find_ht(htp);
+	//hashtable_i* ht = find_ht(htp);
+	hashtable_i* ht = (hashtable_i *) htp;
 	if(ht == NULL) {
 		return NULL;
 	}
@@ -154,7 +158,8 @@ void *hremove(hashtable_t *htp, bool (*searchfn)(void* elementp, const void* sea
 }
 
 void happly(hashtable_t *htp, void (*fn)(void* ep)) {
-	hashtable_i* ht = find_ht(htp);
+	//hashtable_i* ht = find_ht(htp);
+	hashtable_i* ht = (hashtable_i *) htp;
 	if(ht == NULL) {
 		return;
 	}
