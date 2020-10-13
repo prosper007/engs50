@@ -29,8 +29,7 @@ typedef struct queue{
   struct queue *next_queue;
 } queue_i;
 
-static queue_i *queue_interface=NULL;
-
+/*
 //define function to find a specific queue in an interface of queues
 queue_i* find_q(queue_t *qp) {
   queue_i *qfind;
@@ -42,6 +41,7 @@ queue_i* find_q(queue_t *qp) {
 	printf("Queue not found in interface\n");
   return NULL; 
 }
+*/
 
 /* A function that creates a new queue node and allocates memory for it */
 static qnode_t* new_qnode(void* elementp) {
@@ -58,17 +58,19 @@ queue_t* qopen(void) {
   queue->front = queue->back = NULL; // set front and back to NULL
 
 	//add new queue to list of queues in interface
-	queue->next_queue = queue_interface;
-	queue_interface = queue;
+	/*queue->next_queue = queue_interface;
+		queue_interface = queue; */
   return (queue_t*) queue;
 }
 
 /* deallocate a queue, frees everything in it */
 void qclose(queue_t *qp) {
-	queue_i* qi = find_q(qp);
+	/*queue_i* qi = find_q(qp); */
+	queue_i* qi = (queue_i *) qp;
 	if(qi == NULL){
 		return;
 	}
+	
   while (qi->front != NULL) { // checks if qp is empty 
     qnode_t* temp = qi->front; // store initial value of front
     qi->front = qi->front->next; // move front to next node
@@ -77,6 +79,7 @@ void qclose(queue_t *qp) {
   qi->front = qi->back = NULL; // just for safety reset front and back to NULL
 
 	// remove queue from queue_interface
+	/*
 	queue_i* prev = NULL;
 	for(queue_i* i = queue_interface; i!=NULL; i=i->next_queue) {
 		if(i == qi) {
@@ -89,6 +92,7 @@ void qclose(queue_t *qp) {
 		}
 		prev = i;
 	}
+	*/
   free(qi); //free the queue
   qi=NULL;
 	qp=NULL;
@@ -102,7 +106,8 @@ int32_t qput(queue_t *qp, void *elementp) {
   }
   qnode_t* node = new_qnode(elementp);
 
-	queue_i* qi = find_q(qp);
+	//queue_i* qi = find_q(qp);
+	queue_i* qi = (queue_i *) qp;
 	if(qi == NULL){
 		return 1; // return non-zero if queue doesn't exist
 	}
@@ -118,7 +123,8 @@ int32_t qput(queue_t *qp, void *elementp) {
 
 
 void* qget(queue_t *qp) {
-	queue_i* qi = find_q(qp);
+	//queue_i* qi = find_q(qp);
+	queue_i* qi = (queue_i *) qp;
 	if(qi == NULL){
 		return NULL;
 	}
@@ -138,8 +144,8 @@ void* qget(queue_t *qp) {
 
 /* apply a function to every element of the queue */
 void qapply(queue_t *qp, void (*fn)(void *elementp)) {
-	//how to specify the queue in the loop?
-	queue_i *q = find_q(qp);
+	//	queue_i *q = find_q(qp);
+	queue_i* q = (queue_i *) qp;
 	if (q==NULL) {
 		return; // queue not found
 	}
@@ -160,7 +166,8 @@ void qapply(queue_t *qp, void (*fn)(void *elementp)) {
  * returns a pointer to an element, or NULL if not found
  */
 void* qsearch(queue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), const void* skeyp) {
-	queue_i *q = find_q(qp);
+	//queue_i *q = find_q(qp);
+	queue_i* q = (queue_i *) qp;
 	if(q == NULL){
 		return NULL;
 	}
@@ -180,7 +187,8 @@ void* qsearch(queue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), co
  * NULL if not found
  */
 void* qremove(queue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), const void* skeyp) {
-	queue_i* qi = find_q(qp);
+	//	queue_i* qi = find_q(qp);
+	queue_i* qi = (queue_i *) qp;
 	if(qi == NULL){
 		return NULL; // return null if queue doesn't exist
 	}
@@ -219,11 +227,13 @@ void* qremove(queue_t *qp, bool (*searchfn)(void* elementp,const void* keyp), co
  * q2 is dealocated, closed, and unusable upon completion 
  */
 void qconcat(queue_t *q1p, queue_t *q2p) {
-	queue_i *qi_1 = find_q(q1p);
+	//	queue_i *qi_1 = find_q(q1p);
+	queue_i* qi_1 = (queue_i *) q1p;
 	if(qi_1 == NULL) {
 		return;
 	}
-	queue_i *qi_2 = find_q(q2p);
+	//queue_i *qi_2 = find_q(q2p);
+	queue_i* qi_2 = (queue_i *) q2p;
 	if(qi_2 == NULL) {
 		return;
 	}

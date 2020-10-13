@@ -89,11 +89,6 @@ int main(void) {
 	}
 	printf("age: %d\n", pp->age);
 
-	pp=qget(q2);
-	if(pp != NULL) {
-		printf("Test failed! q2 not null after concat\n");
-		exit(EXIT_FAILURE);
-	}
 	printf("Test passed! qapply and qconcat tested\n");
 	qclose(q1);
 	free(p1);
