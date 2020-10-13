@@ -85,15 +85,82 @@ hashtable_t *hopen(uint32_t hsize) {
 	hashtable_i* ht = (hashtable_i*)malloc(sizeof(hashtable_i));
 	ht->hsize = hsize;
 	ht->list_of_queues = (queue_t*)malloc(sizeof(queue_t*) * hsize);
-	
+
+	for(uint32_t i = 0; i < hsize; i++) {
+		ht->list_of_queues[i] = qopen();
+	}
 	// add new hastable to list of hashtables in interface
 	ht->next_ht = hashtable_interface;
 	hashtable_interface = ht;
 	return (hashtable_t*) ht;
 }
-/*
-int32_t hput(hashtable_t *htp, void *ep, const char *key, int keylen) {
-	hashtable->
+
+void hclose(hashtable_t *htp) {
+	hashtable_i* ht = find_ht(htp);
+	if(ht == NULL) {
+		return;
+	}
+	//close all queues
+	for(uint32_t i = 0; i < ht->hsize; i++) {
+		qclose(ht->list_of_queues[i]);
+	}
+	
+	free(ht->list_of_queues);
+	
+	// remove hashtable from hashtable_interface
+	hashtable_i* prev = NULL;
+	for(hashtable_i* i = hashtable_interface; i!=NULL; i=i->next_ht) {
+		if(i == ht) {
+			if(prev == NULL){
+				hashtable_interface = i->next_ht;
+				break;
+			}
+			prev->next_ht = i->next_ht;
+			break;
+		}
+		prev = i;
+	}
+	free(ht);
+	ht=NULL;
+	htp=NULL;
 }
-*/
+
+
+int32_t hput(hashtable_t *htp, void *ep, const char *key, int keylen) {
+	hashtable_i* ht = find_ht(htp);
+	if(ht == NULL) {
+		return 1;
+	}
+	uint32_t ht_idx = SuperFastHash(key, keylen, ht->hsize);
+	return qput(ht->list_of_queues[ht_idx], ep);
+}
+
+void *hsearch(hashtable_t *htp, bool (*searchfn)(void* elementp, const void* searchkeyp), const char *key, int32_t keylen) {
+	hashtable_i* ht = find_ht(htp);
+	if(ht == NULL) {
+		return NULL;
+	}
+	uint32_t ht_idx = SuperFastHash(key, keylen, ht->hsize);
+	return qsearch(ht->list_of_queues[ht_idx], searchfn, key);
+}
+
+void *hremove(hashtable_t *htp, bool (*searchfn)(void* elementp, const void* searchkeyp), const char *key, int32_t keylen) {
+	hashtable_i* ht = find_ht(htp);
+	if(ht == NULL) {
+		return NULL;
+	}
+	uint32_t ht_idx = SuperFastHash(key, keylen, ht->hsize);
+	return qremove(ht->list_of_queues[ht_idx], searchfn, key);
+}
+
+void happly(hashtable_t *htp, void (*fn)(void* ep)) {
+	hashtable_i* ht = find_ht(htp);
+	if(ht == NULL) {
+		return;
+	}
+
+	for(uint32_t i = 0; i < ht->hsize; i++) {
+		qapply(ht->list_of_queues[i], fn);
+	}
+}
 
