@@ -56,19 +56,19 @@ int main(void) {
 
   // put two persons on queue
   printf("Testing hput...\n");
-  person_t *p1 = make_person("Lerty", 42, 6.13);
+  person_t *p1 = make_person("Mike", 42, 6.13);
   char* key1 = p1->name;
-  int keylen1 = sizeof(key1);
-  int32_t put_p1 = hput(h1, p1, key1, keylen1);
+  // int keylen1 = sizeof(key1);
+  int32_t put_p1 = hput(h1, p1, key1, 5);
   if(put_p1 != 0){
     printf("Test failed! error putting to queue.\n");
     exit(EXIT_FAILURE);
   }
   
-  person_t *p2 = make_person("Telitm", 36, 4.02);
+  person_t *p2 = make_person("Rafe", 36, 4.02);
   char* key2 = p2->name;
-  int keylen2 = sizeof(key2);
-  int32_t put_p2 = hput(h1, p2, key2, keylen2);
+  //int keylen2 = sizeof(key2);
+  int32_t put_p2 = hput(h1, p2, key2, 5);
   if(put_p2 != 0){
     printf("Test failed! error putting to queue.\n");
     exit(EXIT_FAILURE);
@@ -76,14 +76,14 @@ int main(void) {
 
 	
   // search the persons to see if they are in the hashtable
-  person_t* pp = hsearch(h1, name_search, key1, keylen1);
+  person_t* pp = hsearch(h1, name_search, key1, 5);
   if(pp != p1) {
     printf("Test failed hsearch did not find right person");
     exit(EXIT_FAILURE);
   }
   printf("found name: %s\n", pp->name);
   
-  pp = hsearch(h1, name_search, key2, keylen2);                                                                                                                                                
+  pp = hsearch(h1, name_search, key2, 5);                                                                                                                                                
   if(pp != p2) {                                                                                                                                                                                           
     printf("Test failed hsearch did not find right person");                                                                                                                                               
     exit(EXIT_FAILURE);                                                                                                                                                                                    
